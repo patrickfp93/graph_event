@@ -1,6 +1,6 @@
 [package]
 name = "graph_event"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 repository = "https://github.com/patrickfp93/graph_event"
 description = "The project is focused on graph nodes that are connected through mutation events."
