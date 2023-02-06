@@ -1,55 +1,29 @@
-use crate::node::Node;
 
+pub type EventMethod<T> = fn(reference: &T, mutable: &mut T) -> bool;
 
-pub type EventMethod<T> = fn(reference : &T,mutable : &mut T);
-
-pub struct Event<T: ? Sized> {
-    current_counter: u64,
-    pub(crate) reference: Node<T>,
-    pub(crate) mutable: Node<T>,
-    event: EventMethod<T>,
-    condition: Condition,
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum NotificationPolicy {
+    All,
+    LessUpdated,
+    MoreUpdated,
+    EquallyUpdated,
+    DifferentlyUpdated,
+    EquallyOrLessUpdated,
+    EquallyOrMoreUpdated
 }
 
-impl<T: ?Sized> Event<T> {
-    pub fn new(
-        reference: Node<T>,
-        mutable: Node<T>,
-        event: EventMethod<T>,
-        condition: Condition,
-    ) -> Self {
-        Self {
-            current_counter: 0,
-            reference,
-            mutable,
-            event,
-            condition,
+impl NotificationPolicy{
+    pub fn should_notify(&self,node_state_reference : u64,node_state_mutable : u64) -> bool{
+        match self {
+            NotificationPolicy::All => true,
+            NotificationPolicy::LessUpdated => node_state_mutable < node_state_reference,
+            NotificationPolicy::MoreUpdated => node_state_mutable > node_state_reference,
+            NotificationPolicy::EquallyUpdated => node_state_mutable == node_state_reference,
+            NotificationPolicy::DifferentlyUpdated => node_state_mutable != node_state_reference,
+            NotificationPolicy::EquallyOrLessUpdated => node_state_mutable <= node_state_reference,
+            NotificationPolicy::EquallyOrMoreUpdated => node_state_mutable >= node_state_reference,
         }
     }
-
-    pub fn check(&mut self) {
-        let event = &mut self.event;
-        match self.condition {
-            Condition::Always => event(self.reference.value.as_ref(), self.mutable.value.lock().as_mut()),
-            Condition::ToUpdate => if *self.reference.counter.as_ref() < self.current_counter {
-                event(self.reference.value.as_ref(), self.mutable.value.lock().as_mut()) 
-            },
-            Condition::WhenDifferent => if *self.reference.counter.as_ref() != self.current_counter {
-                event(self.reference.value.as_ref(), self.mutable.value.lock().as_mut()) 
-            },
-            Condition::WhenEqual => if *self.reference.counter.as_ref() == self.current_counter {
-                event(self.reference.value.as_ref(), self.mutable.value.lock().as_mut()) 
-            },
-        }
-    }
-
-}
-
-pub enum Condition {
-    Always,
-    ToUpdate,
-    WhenDifferent,
-    WhenEqual
 }
 
 pub enum NodeError {
@@ -57,7 +31,7 @@ pub enum NodeError {
     DoesNotExist,
 }
 
-impl From<NodeError> for String{
+impl From<NodeError> for String {
     fn from(error: NodeError) -> Self {
         match error {
             NodeError::AlreadyExists => "Already exists!".into(),
@@ -65,3 +39,5 @@ impl From<NodeError> for String{
         }
     }
 }
+
+
