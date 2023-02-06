@@ -10,3 +10,4 @@ license = "MIT"
 
 [dependencies]
 armc = "1.3.2"
+[dev-dependencies]
